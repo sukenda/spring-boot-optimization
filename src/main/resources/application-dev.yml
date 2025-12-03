@@ -1,0 +1,131 @@
+# =============================================================
+# Development Profile Configuration
+# Optimized for development and debugging
+# =============================================================
+
+spring:
+  # === LAZY INITIALIZATION ===
+  # Disabled in dev for easier debugging
+  main:
+    lazy-initialization: false
+
+  # === VIRTUAL THREADS (Java 21+) ===
+  # Enable virtual threads for better CPU utilization
+  threads:
+    virtual:
+      enabled: true
+
+  # === JMX ENABLED (for debugging) ===
+  jmx:
+    enabled: true
+
+  # === DATABASE CONFIGURATION (R2DBC - Reactive) ===
+  # R2DBC is fully reactive and supports WebFlux
+  # 
+  # Option 1: H2 in-memory (DEFAULT - for quick testing without MySQL setup)
+  # No setup required, ready to run immediately!
+  r2dbc:
+    url: ${DB_URL:r2dbc:h2:mem:///devdb?options=DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
+    
+    # Option 2: MySQL (uncomment to use MySQL instead of H2)
+    # Requires: MySQL server running and database created
+    # url: ${DB_URL:r2dbc:mysql://localhost:3306/devdb?useSSL=false&allowPublicKeyRetrieval=true}
+    # username: ${DB_USERNAME:root}
+    # password: ${DB_PASSWORD:} 
+    
+    # Connection pool settings for development
+    pool:
+      initial-size: 1
+      max-size: 5
+      max-idle-time: 30m
+      max-create-connection-time: 10s
+
+  # === SQL INITIALIZATION ===
+  sql:
+    init:
+      mode: always
+      continue-on-error: true
+      # Migration files location
+      schema-locations: classpath:db/migration/*.sql
+      # Run migrations in alphabetical order (V1, V2, V3, ...)
+
+# === JWT CONFIGURATION (Development) ===
+jwt:
+  # Development JWT secret (use a simple key for dev)
+  secret: ${JWT_SECRET:dev-secret-key-minimum-256-bits-for-hmac-sha-256-algorithm}
+  expiration: ${JWT_EXPIRATION:86400000}  # 24 hours
+  issuer: ${JWT_ISSUER:spring-boot-optimization-dev}
+  audience: ${JWT_AUDIENCE:spring-boot-optimization-dev-users}
+
+# === SERVER CONFIGURATION (Development) ===
+server:
+  # Development port
+  port: 8087
+  
+  # More lenient timeouts for development
+  netty:
+    connection-timeout: 60000
+    idle-timeout: 120000
+
+# === ACTUATOR CONFIGURATION (Development) ===
+management:
+  endpoints:
+    web:
+      exposure:
+        # More endpoints exposed in dev for debugging
+        include: health,info,metrics,env,configprops,beans,loggers,httptrace
+      base-path: /actuator
+  
+  endpoint:
+    health:
+      # Show all details in development
+      show-details: always
+    metrics:
+      enabled: true
+    # Enable additional endpoints for debugging
+    env:
+      enabled: true
+    configprops:
+      enabled: true
+    beans:
+      enabled: true
+    loggers:
+      enabled: true
+
+# === LOGGING CONFIGURATION (Development) ===
+logging:
+  level:
+    root: DEBUG
+    org.springframework: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.data.r2dbc: DEBUG
+    org.hibernate: DEBUG
+    com.khas: DEBUG
+    reactor.netty: INFO
+    io.r2dbc: DEBUG
+  
+  # More detailed logging in development
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"
+
+# === DEVELOPMENT FEATURES ===
+# Enable development-specific features
+debug: true
+
+# === SWAGGER/OPENAPI CONFIGURATION (Development) ===
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
+    try-it-out-enabled: true
+  show-actuator: true
+

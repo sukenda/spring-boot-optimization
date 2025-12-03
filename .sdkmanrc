@@ -1,0 +1,6 @@
+# SDKMAN configuration for this project
+# This file tells SDKMAN which Java version to use for this project
+# Run: sdk env to activate
+
+java=21.0.1-tem
+

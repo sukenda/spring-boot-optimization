@@ -1,0 +1,167 @@
+# =============================================================
+# Production Profile Configuration
+# Optimized for low-resource servers (1GB RAM, 1 CPU Core)
+# =============================================================
+
+spring:
+  # === LAZY INITIALIZATION ===
+  # Enable lazy initialization to reduce startup memory
+  main:
+    lazy-initialization: true
+
+  # === VIRTUAL THREADS (Java 21+) ===
+  # Enable virtual threads for better CPU utilization
+  threads:
+    virtual:
+      enabled: true
+
+  # === JMX DISABLED ===
+  # Disable JMX to save memory (~10-20MB)
+  jmx:
+    enabled: false
+
+  # === DATABASE CONFIGURATION (R2DBC - Reactive) ===
+  # R2DBC is fully reactive and supports WebFlux (non-blocking)
+  # MySQL production configuration
+  r2dbc:
+    # MySQL configuration (production)
+    url: ${DB_URL:r2dbc:mysql://localhost:3306/proddb?useSSL=true&allowPublicKeyRetrieval=false}
+    username: ${DB_USERNAME:prod_user}
+    password: ${DB_PASSWORD:}
+    
+    # Connection pool settings optimized for production
+    pool:
+      initial-size: 2
+      max-size: 10
+      max-idle-time: 30m
+      max-create-connection-time: 10s
+      validation-query: SELECT 1
+      
+    # MySQL-specific R2DBC options
+    # For connection timeout, SSL, etc., add to URL query parameters:
+    # - useSSL=true (production)
+    # - useSSL=false (development)
+    # - serverTimezone=Asia/Jakarta (timezone)
+    # - allowPublicKeyRetrieval=true (if needed)
+
+  # === SQL INITIALIZATION ===
+  sql:
+    init:
+      mode: always  # Enable for automatic migrations
+      continue-on-error: false
+      # Migration files location
+      schema-locations: classpath:db/migration/*.sql
+      # Run migrations in alphabetical order (V1, V2, V3, ...)
+  
+  # === FLYWAY (Optional - Uncomment to use Flyway for migrations) ===
+  # flyway:
+  #   enabled: true
+  #   locations: classpath:db/migration
+  #   baseline-on-migrate: true
+  #   validate-on-migrate: true
+
+# === JWT CONFIGURATION (Production) ===
+jwt:
+  # Production JWT secret (REQUIRED: Set via environment variable)
+  # Must be at least 256 bits (32 characters) for HS256 algorithm
+  # For better security, use RS256 with public/private key pair
+  secret: ${JWT_SECRET:CHANGE-THIS-TO-A-SECURE-SECRET-KEY-MINIMUM-256-BITS}
+  expiration: ${JWT_EXPIRATION:86400000}  # 24 hours (adjust as needed)
+  issuer: ${JWT_ISSUER:spring-boot-optimization}
+  audience: ${JWT_AUDIENCE:spring-boot-optimization-users}
+
+# === SERVER CONFIGURATION (Production) ===
+server:
+  # Production port (can be overridden via environment variable)
+  port: ${SERVER_PORT:8087}
+  
+  # Optimized timeouts for production
+  netty:
+    connection-timeout: 20000
+    idle-timeout: 60000
+  
+  # Error pages
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+
+# === ACTUATOR CONFIGURATION (Production) ===
+management:
+  endpoints:
+    web:
+      exposure:
+        # Minimal endpoints exposed in production
+        include: health,info,metrics
+      base-path: /actuator
+  
+  endpoint:
+    health:
+      # Show details only when authorized
+      show-details: when_authorized
+      probes:
+        enabled: true
+    metrics:
+      enabled: true
+    # Disable sensitive endpoints in production
+    env:
+      enabled: false
+    configprops:
+      enabled: false
+    beans:
+      enabled: false
+    loggers:
+      enabled: false
+
+
+# === LOGGING CONFIGURATION (Production) ===
+logging:
+  level:
+    root: WARN
+    org.springframework: ERROR
+    org.springframework.web: WARN
+    org.springframework.security: WARN
+    org.springframework.data.r2dbc: WARN
+    org.hibernate: ERROR
+    com.khas: INFO
+    reactor.netty: WARN
+    io.r2dbc: WARN
+  
+  # Production logging pattern (more compact)
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  
+  # Log rotation for production
+  file:
+    name: logs/application.log
+  logback:
+    rollingpolicy:
+      max-file-size: 50MB
+      max-history: 10
+      total-size-cap: 500MB
+
+# === PRODUCTION OPTIMIZATIONS ===
+# Disable debug features
+debug: false
+
+# === SWAGGER/OPENAPI CONFIGURATION (Production) ===
+# Disable Swagger in production for security
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# === ENVIRONMENT VARIABLES ===
+# Production configuration can be overridden via environment variables:
+# - DB_USERNAME: Database username
+# - DB_PASSWORD: Database password
+# - JWT_ISSUER_URI: JWT issuer URI
+# - JWT_AUDIENCE: JWT audience
+# - JWT_JWK_SET_URI: JWK Set URI
+# - SERVER_PORT: Server port
+# - JWT_CLAIM_ROLES: JWT roles claim name
+# - JWT_CLAIM_USERNAME: JWT username claim name
+

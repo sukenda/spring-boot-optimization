@@ -1,0 +1,119 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.0'
+    id 'io.spring.dependency-management' version '1.1.6'
+    id 'org.graalvm.buildtools.native' version '0.10.3'
+}
+
+group = 'com.khas'
+
+// Version management: Try git tag first, then version.properties, then default
+def getVersion() {
+    // Try to get version from git tag
+    try {
+        def gitTag = 'git describe --tags --abbrev=0'.execute().text.trim()
+        if (gitTag && !gitTag.isEmpty()) {
+            // Remove 'v' prefix if present
+            def version = gitTag.replaceAll('^v', '')
+            println "Using version from git tag: $version"
+            return version
+        }
+    } catch (Exception e) {
+        // Git not available or no tags
+    }
+    
+    // Try to get version from version.properties
+    def versionFile = file('version.properties')
+    if (versionFile.exists()) {
+        def props = new Properties()
+        versionFile.withInputStream { props.load(it) }
+        def version = props.getProperty('version', '0.0.1')
+        def buildNumber = props.getProperty('build.number', '1')
+        println "Using version from version.properties: $version (build $buildNumber)"
+        return version
+    }
+    
+    // Default version
+    return '0.0.1-SNAPSHOT'
+}
+
+version = getVersion()
+sourceCompatibility = '21'
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring WebFlux (Reactive Web)
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    
+    // Actuator for health checks and monitoring
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    
+    // Bean Validation
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    
+    // Spring Security (for password encoding)
+    implementation 'org.springframework.security:spring-security-crypto'
+    
+    // JWT Support (JSON Web Token - Standard)
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
+    implementation 'io.jsonwebtoken:jjwt-impl:0.12.5'
+    implementation 'io.jsonwebtoken:jjwt-jackson:0.12.5'
+    
+    // Reactive Database (R2DBC) - Fully supports WebFlux
+    implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+    implementation 'io.r2dbc:r2dbc-h2' // H2 database for development/testing
+    implementation 'io.asyncer:r2dbc-mysql' // MySQL R2DBC driver (reactive, supports WebFlux)
+    
+    // Lombok (optional but useful)
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    
+    // Swagger/OpenAPI Documentation
+    implementation 'org.springdoc:springdoc-openapi-starter-webflux-ui:2.3.0'
+    
+    // Testing
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'io.projectreactor:reactor-test'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+// Enable layered jar for better optimization
+tasks.named('bootJar') {
+    layered {
+        enabled = true
+    }
+}
+
+// GraalVM Native Image Configuration
+graalvmNative {
+    binaries {
+        main {
+            imageName = 'spring-boot-optimization'
+            mainClass = 'com.khas.springbootoptimization.SpringBootoptimizationApplication'
+            buildArgs.addAll([
+                '--gc=serial',           // Use serial GC for smaller memory footprint
+                '-O2',                    // Optimization level
+                '--no-fallback',          // Fail if native image cannot be built
+                '--install-exit-handlers', // Proper signal handling
+                '-H:+ReportExceptionStackTraces', // Better error reporting
+                '-H:IncludeResources=application.yml|application-.*\\.yml', // Include config files
+                '--enable-url-protocols=http,https', // Enable HTTP protocols
+                '-H:IncludeResourceBundles=messages', // Include resource bundles
+                '-H:+AllowVMInspection'  // Allow VM inspection
+            ])
+        }
+    }
+}
+

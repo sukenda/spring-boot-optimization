@@ -1,0 +1,77 @@
+[Unit]
+Description=Spring Boot optimization Application
+Documentation=https://github.com/yourusername/spring-boot-optimization
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+User=springboot
+Group=springboot
+WorkingDirectory=/opt/spring-boot-optimization
+
+# Environment variables
+Environment="SPRING_PROFILES_ACTIVE=prod"
+Environment="JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64"
+Environment="SERVER_PORT=8080"
+
+# Database configuration (override in /etc/spring-boot-optimization/application-prod.yml or use env vars)
+Environment="DB_URL=r2dbc:mysql://localhost:3306/proddb?useSSL=true"
+Environment="DB_USERNAME=prod_user"
+Environment="DB_PASSWORD="
+
+# JWT configuration (IMPORTANT: Set secure secret in production!)
+Environment="JWT_SECRET=CHANGE-THIS-TO-A-SECURE-SECRET-KEY-MINIMUM-256-BITS"
+Environment="JWT_EXPIRATION=86400000"
+Environment="JWT_ISSUER=spring-boot-optimization"
+Environment="JWT_AUDIENCE=spring-boot-optimization-users"
+
+# JVM Options optimized for 1GB RAM, 1 CPU
+# Heap: 256MB - 384MB (leaves ~600MB for OS and other processes)
+# NOTE: Update JAR_FILE path when deploying new version
+# Use symlink for easy version switching: /opt/spring-boot-optimization/app.jar -> spring-boot-optimization-VERSION.jar
+ExecStart=/usr/bin/java \
+  -Xms256m \
+  -Xmx384m \
+  -XX:MetaspaceSize=64m \
+  -XX:MaxMetaspaceSize=128m \
+  -Xss512k \
+  -XX:+UseSerialGC \
+  -XX:+DisableExplicitGC \
+  -XX:+UseStringDeduplication \
+  -XX:+OptimizeStringConcat \
+  -XX:-OmitStackTraceInFastThrow \
+  -Djava.awt.headless=true \
+  -Dfile.encoding=UTF-8 \
+  -jar /opt/spring-boot-optimization/app.jar
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=200
+StartLimitBurst=5
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/spring-boot-optimization/logs
+ReadWritePaths=/opt/spring-boot-optimization
+
+# Resource limits (optional, adjust based on server capacity)
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=spring-boot-optimization
+
+# Graceful shutdown
+TimeoutStopSec=30
+KillMode=mixed
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

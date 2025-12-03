@@ -1,0 +1,82 @@
+# =============================================================
+# Spring Boot Optimized Configuration - Base/Default
+# Target: 1GB RAM, 1 CPU Core
+# Using Spring WebFlux for reactive programming
+# =============================================================
+
+spring:
+  application:
+    name: spring-boot-optimization
+
+  # === JACKSON CONFIGURATION ===
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+# === SERVER CONFIGURATION ===
+# Using Netty (default for WebFlux)
+server:
+  port: 8080
+  
+  # Netty specific optimizations for WebFlux
+  netty:
+    # Connection timeout
+    connection-timeout: 20000
+    # Idle timeout
+    idle-timeout: 60000
+    
+  # Compression to reduce network I/O
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+    min-response-size: 1024
+
+  # Shutdown gracefully
+  shutdown: graceful
+
+# === JWT CONFIGURATION ===
+jwt:
+  secret: ${JWT_SECRET:your-secret-key-change-this-in-production-minimum-256-bits}
+  expiration: ${JWT_EXPIRATION:86400000}  # 24 hours in milliseconds
+  issuer: ${JWT_ISSUER:spring-boot-optimization}
+  audience: ${JWT_AUDIENCE:spring-boot-optimization-users}
+
+# === ACTUATOR CONFIGURATION ===
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+    # Disable JMX endpoints
+    jmx:
+      exposure:
+        exclude: "*"
+  
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+    metrics:
+      enabled: true
+  
+  # Disable unnecessary features
+  health:
+    defaults:
+      enabled: true
+
+# === LOGGING CONFIGURATION ===
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  
+  # Async logging for better performance
+  file:
+    name: logs/application.log
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 3
+      total-size-cap: 30MB

@@ -1,0 +1,29 @@
+[
+  {
+    "name": "java.lang.management.ManagementFactory",
+    "methods": [
+      {"name": "getMemoryMXBean", "parameterTypes": []},
+      {"name": "getOperatingSystemMXBean", "parameterTypes": []}
+    ]
+  },
+  {
+    "name": "java.lang.management.MemoryMXBean",
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "java.lang.management.OperatingSystemMXBean",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "java.time.Instant",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "java.time.Duration",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  }
+]
+
